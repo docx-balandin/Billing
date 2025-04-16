@@ -9,7 +9,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({ autoLoadEntities: true }),
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
         return {
