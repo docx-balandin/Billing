@@ -7,14 +7,14 @@ import {
 } from 'typeorm';
 import { AccountEntity } from '../../account/entities/account.entity';
 
-enum TransactionTypeEnum {
+export enum TransactionTypeEnum {
   DEPOSIT = 'DEPOSIT',
   WITHDRAW = 'withdraw',
   TRANSFER = 'transfer',
   P2TRANSFER = 'p2transfer',
 }
 
-enum TransactionStatusEnum {
+export enum TransactionStatusEnum {
   SUCCESS = 'success',
   PROCESSING = 'processing',
   REJECT = 'reject',
