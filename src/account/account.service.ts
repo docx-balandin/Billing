@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { AccountEntity } from './entities/account.entity';
 import { Repository } from 'typeorm';
 import { CreateAccountDto } from './dto/create-account.dto';
-import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Injectable()
 export class AccountService {
@@ -88,5 +87,16 @@ export class AccountService {
     //   'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
     //   [amount, id],
     // );
+  }
+
+  findAccounts(clientId: number) {
+    return this.accountRepository.findBy({ client: { id: clientId } });
+  }
+
+  async updateIsActive(accountId: number, isActive: boolean): Promise<void> {
+    await this.accountRepository.update(
+      { id: accountId },
+      { isActive: isActive },
+    );
   }
 }

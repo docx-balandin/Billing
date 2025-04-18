@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   TransactionEntity,
   TransactionStatusEnum,
@@ -21,6 +17,33 @@ export class TransactionService {
     private readonly accountService: AccountService,
   ) {}
 
+  findAllTransactionForAdmin() {
+    return this.transactionRepository.find({
+      where: {},
+      order: { type: 'ASC', id: 'ASC', createdAt: 'ASC' },
+    });
+    // return this.transactionRepository.manager.query<TransactionEntity[]>(
+    //   'SELECT * FROM transaction ORDER BY type, id, "createdAt"',
+    // );
+  }
+
+  findAllTransactions(clientId: number): Promise<TransactionEntity[]> {
+    return this.transactionRepository.findBy({
+      client: { id: clientId },
+    });
+  }
+
+  findAccountAllTransactions(
+    clientId: number,
+    accountId: number,
+  ): Promise<TransactionEntity[]> {
+    return this.transactionRepository.findBy({
+      toAccount: { id: accountId },
+      fromAccount: { id: accountId },
+      client: { id: clientId },
+    });
+  }
+
   async makeDeposit(
     clientId: number,
     accountId: number,
@@ -31,11 +54,13 @@ export class TransactionService {
       accountId,
       makeDepositDto.amount,
     );
+
     return this.transactionRepository.save({
       ...makeDepositDto,
       toAccount: { id: accountId },
       status: TransactionStatusEnum.SUCCESS,
       type: TransactionTypeEnum.DEPOSIT,
+      client: { id: clientId },
     });
   }
 
@@ -49,11 +74,13 @@ export class TransactionService {
       accountId,
       '-' + makeDepositDto.amount,
     );
+
     return this.transactionRepository.save({
       ...makeDepositDto,
       toAccount: { id: accountId },
       status: TransactionStatusEnum.SUCCESS,
       type: TransactionTypeEnum.WITHDRAW,
+      client: { id: clientId },
     });
   }
 
@@ -78,11 +105,13 @@ export class TransactionService {
       fromAccountId,
       '-' + makeDepositDto.amount,
     );
+
     await this.accountService.updateBalance(
       clientId,
       toAccountId,
       makeDepositDto.amount,
     );
+
     return this.transactionRepository.save({
       ...makeDepositDto,
       fromAccount: { id: fromAccountId },
@@ -104,11 +133,13 @@ export class TransactionService {
       fromAccountId,
       '-' + makeDepositDto.amount,
     );
+
     await this.accountService.updateBalance(
       toClientId,
       toAccountId,
       makeDepositDto.amount,
     );
+
     return this.transactionRepository.save({
       ...makeDepositDto,
       fromAccount: { id: fromAccountId },

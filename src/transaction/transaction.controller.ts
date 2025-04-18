@@ -1,4 +1,11 @@
-import { Body, Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { MakeDepositDto } from './dto/create-transaction.dto';
 import { TransactionEntity } from './entities/transaction.entity';
@@ -6,6 +13,24 @@ import { TransactionEntity } from './entities/transaction.entity';
 @Controller('transaction')
 export class TransactionController {
   constructor(private readonly transactionsService: TransactionService) {}
+
+  @Get(':clientId')
+  async findAllTransaction(@Param('clientId', ParseIntPipe) clientId: number) {
+    const data = await this.transactionsService.findAllTransactions(clientId);
+    return { data };
+  }
+
+  @Get(':clientId/:accountId')
+  async findAccountAllTransaction(
+    @Param('clientId', ParseIntPipe) clientId: number,
+    @Param('accountId', ParseIntPipe) accountId: number,
+  ) {
+    const data = await this.transactionsService.findAccountAllTransactions(
+      clientId,
+      accountId,
+    );
+    return { data };
+  }
 
   @Post('deposit/:clientId/:accountId')
   async makeDeposit(

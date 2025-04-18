@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { AccountEntity } from '../../account/entities/account.entity';
+import { ClientEntity } from '../../client/entities/client.entity';
 
 export enum TransactionTypeEnum {
   DEPOSIT = 'DEPOSIT',
@@ -54,4 +55,7 @@ export class TransactionEntity {
     default: TransactionStatusEnum.SUCCESS,
   })
   status: TransactionStatusEnum;
+
+  @ManyToOne(() => ClientEntity, (client) => client.transaction)
+  client?: ClientEntity;
 }
