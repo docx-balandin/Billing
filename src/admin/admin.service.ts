@@ -14,8 +14,8 @@ export class AdminService {
     return this.accountService.findAccounts(clientId);
   }
 
-  findAllTransactions() {
-    return this.transactionService.findAllTransactionForAdmin();
+  findAllTransactions(order: Record<string, string>) {
+    return this.transactionService.findAllTransactionForAdmin(order);
   }
 
   async updateActiveAccount(accountId: number, updateAdminDto: UpdateAdminDto) {

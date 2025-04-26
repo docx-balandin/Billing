@@ -1,7 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AccountEntity } from './entities/account.entity';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateAccountDto } from './dto/create-account.dto';
 
 @Injectable()
@@ -87,6 +91,32 @@ export class AccountService {
     //   'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
     //   [amount, id],
     // );
+  }
+
+  async activeAccount(accountId: number): Promise<void> {
+    const active = await this.accountRepository.existsBy({
+      id: accountId,
+      isActive: true,
+    });
+
+    if (!active) {
+      throw new BadRequestException(
+        `Operation impossible! Account ${accountId} blocked!`,
+      );
+    }
+  }
+
+  async negativeBalance(accountId: number, amount: string): Promise<void> {
+    const balance = await this.accountRepository.existsBy({
+      id: accountId,
+      balance: MoreThanOrEqual(amount),
+    });
+
+    if (!balance) {
+      throw new BadRequestException(
+        `Operation impossible! Negative account ${accountId} balance`,
+      );
+    }
   }
 
   findAccounts(clientId: number) {

@@ -14,13 +14,13 @@ import { TransactionEntity } from './entities/transaction.entity';
 export class TransactionController {
   constructor(private readonly transactionsService: TransactionService) {}
 
-  @Get(':clientId')
+  @Get('all_transaction/:clientId')
   async findAllTransaction(@Param('clientId', ParseIntPipe) clientId: number) {
     const data = await this.transactionsService.findAllTransactions(clientId);
     return { data };
   }
 
-  @Get(':clientId/:accountId')
+  @Get('all_account_transaction/:clientId/:accountId')
   async findAccountAllTransaction(
     @Param('clientId', ParseIntPipe) clientId: number,
     @Param('accountId', ParseIntPipe) accountId: number,

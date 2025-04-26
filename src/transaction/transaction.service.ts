@@ -4,7 +4,7 @@ import {
   TransactionStatusEnum,
   TransactionTypeEnum,
 } from './entities/transaction.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MakeDepositDto } from './dto/create-transaction.dto';
 import { AccountService } from '../account/account.service';
@@ -17,10 +17,11 @@ export class TransactionService {
     private readonly accountService: AccountService,
   ) {}
 
-  findAllTransactionForAdmin() {
+  findAllTransactionForAdmin(order: Record<string, string>) {
     return this.transactionRepository.find({
       where: {},
-      order: { type: 'ASC', id: 'ASC', createdAt: 'ASC' },
+      order: order,
+      // order: { type: 'ASC', id: 'ASC', createdAt: 'ASC' },
     });
     // return this.transactionRepository.manager.query<TransactionEntity[]>(
     //   'SELECT * FROM transaction ORDER BY type, id, "createdAt"',
@@ -36,11 +37,14 @@ export class TransactionService {
   findAccountAllTransactions(
     clientId: number,
     accountId: number,
-  ): Promise<TransactionEntity[]> {
-    return this.transactionRepository.findBy({
-      toAccount: { id: accountId },
-      fromAccount: { id: accountId },
-      client: { id: clientId },
+  ): Promise<
+    FindOptionsWhere<TransactionEntity> | FindOptionsWhere<TransactionEntity[]>
+  > {
+    return this.transactionRepository.find({
+      where: [
+        { client: { id: clientId }, toAccount: { id: accountId } },
+        { client: { id: clientId }, fromAccount: { id: accountId } },
+      ],
     });
   }
 
@@ -49,6 +53,8 @@ export class TransactionService {
     accountId: number,
     makeDepositDto: MakeDepositDto,
   ): Promise<TransactionEntity> {
+    await this.accountService.activeAccount(accountId);
+
     await this.accountService.updateBalance(
       clientId,
       accountId,
@@ -69,6 +75,10 @@ export class TransactionService {
     accountId: number,
     makeDepositDto: MakeDepositDto,
   ): Promise<TransactionEntity> {
+    await this.accountService.activeAccount(accountId);
+
+    await this.accountService.negativeBalance(accountId, makeDepositDto.amount);
+
     await this.accountService.updateBalance(
       clientId,
       accountId,
@@ -100,6 +110,15 @@ export class TransactionService {
       throw new BadRequestException('Not Found');
     }
 
+    await this.accountService.activeAccount(fromAccountId);
+
+    await this.accountService.activeAccount(toAccountId);
+
+    await this.accountService.negativeBalance(
+      fromAccountId,
+      makeDepositDto.amount,
+    );
+
     await this.accountService.updateBalance(
       clientId,
       fromAccountId,
@@ -116,6 +135,7 @@ export class TransactionService {
       ...makeDepositDto,
       fromAccount: { id: fromAccountId },
       toAccount: { id: toAccountId },
+      client: { id: clientId },
       status: TransactionStatusEnum.SUCCESS,
       type: TransactionTypeEnum.TRANSFER,
     });
@@ -128,6 +148,15 @@ export class TransactionService {
     toAccountId: number,
     makeDepositDto: MakeDepositDto,
   ): Promise<TransactionEntity> {
+    await this.accountService.activeAccount(fromAccountId);
+
+    await this.accountService.activeAccount(toAccountId);
+
+    await this.accountService.negativeBalance(
+      fromAccountId,
+      makeDepositDto.amount,
+    );
+
     await this.accountService.updateBalance(
       fromClientId,
       fromAccountId,
@@ -144,6 +173,7 @@ export class TransactionService {
       ...makeDepositDto,
       fromAccount: { id: fromAccountId },
       toAccount: { id: toAccountId },
+      client: { id: fromClientId },
       status: TransactionStatusEnum.SUCCESS,
       type: TransactionTypeEnum.P2TRANSFER,
     });

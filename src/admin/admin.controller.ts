@@ -27,7 +27,14 @@ export class AdminController {
     //   type: 'ASC',
     //   createdAt: 'DESC',
     // };
-    const data = await this.adminService.findAllTransactions();
+    const dataOrder = order.split(',').reduce((acc, item) => {
+      const [key, value] = item.split(':');
+      if (['createdAt'].includes(key)) {
+        return { ...acc, [key]: value };
+      }
+      return acc;
+    }, {});
+    const data = await this.adminService.findAllTransactions(dataOrder);
     return { data };
   }
 
