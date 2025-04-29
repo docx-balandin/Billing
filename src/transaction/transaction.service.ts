@@ -4,7 +4,7 @@ import {
   TransactionStatusEnum,
   TransactionTypeEnum,
 } from './entities/transaction.entity';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MakeDepositDto } from './dto/create-transaction.dto';
 import { AccountService } from '../account/account.service';
@@ -34,18 +34,22 @@ export class TransactionService {
     });
   }
 
-  findAccountAllTransactions(
+  async findAccountAllTransactions(
     clientId: number,
     accountId: number,
-  ): Promise<
-    FindOptionsWhere<TransactionEntity> | FindOptionsWhere<TransactionEntity[]>
-  > {
-    return this.transactionRepository.find({
+  ): Promise<TransactionEntity[]> {
+    const allAccountTransaction = await this.transactionRepository.find({
       where: [
         { client: { id: clientId }, toAccount: { id: accountId } },
         { client: { id: clientId }, fromAccount: { id: accountId } },
       ],
     });
+
+    if (!allAccountTransaction.length) {
+      throw new BadRequestException('Account Not Found');
+    }
+
+    return allAccountTransaction;
   }
 
   async makeDeposit(
@@ -53,6 +57,8 @@ export class TransactionService {
     accountId: number,
     makeDepositDto: MakeDepositDto,
   ): Promise<TransactionEntity> {
+    await this.accountService.existsAccount(clientId, accountId);
+
     await this.accountService.activeAccount(accountId);
 
     await this.accountService.updateBalance(
@@ -75,6 +81,8 @@ export class TransactionService {
     accountId: number,
     makeDepositDto: MakeDepositDto,
   ): Promise<TransactionEntity> {
+    await this.accountService.existsAccount(clientId, accountId);
+
     await this.accountService.activeAccount(accountId);
 
     await this.accountService.negativeBalance(accountId, makeDepositDto.amount);
@@ -107,8 +115,14 @@ export class TransactionService {
     );
 
     if (!isSameClientAccounts) {
-      throw new BadRequestException('Not Found');
+      throw new BadRequestException(
+        'The accounts do not belong to the same client',
+      );
     }
+
+    await this.accountService.existsAccount(clientId, fromAccountId);
+
+    await this.accountService.existsAccount(clientId, toAccountId);
 
     await this.accountService.activeAccount(fromAccountId);
 
@@ -148,6 +162,10 @@ export class TransactionService {
     toAccountId: number,
     makeDepositDto: MakeDepositDto,
   ): Promise<TransactionEntity> {
+    await this.accountService.existsAccount(fromClientId, fromAccountId);
+
+    await this.accountService.existsAccount(toClientId, toAccountId);
+
     await this.accountService.activeAccount(fromAccountId);
 
     await this.accountService.activeAccount(toAccountId);

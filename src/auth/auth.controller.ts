@@ -2,8 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
   Post,
   Request,
   UseGuards,
@@ -12,8 +10,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/create-auth.dto';
 import { AuthGuard } from './auth.guard';
 import { Public } from './public.decorator';
-import { Request as ExpressRequest } from 'express';
-import { JwtPayload } from './interfaces/jwt.interface';
+import { AppRequest } from '../types';
 
 @Controller('auth')
 export class AuthController {
@@ -27,7 +24,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Get('profile')
-  async getProfile(@Request() req: ExpressRequest & { client: JwtPayload }) {
+  async getProfile(@Request() req: AppRequest) {
     // req.client;
     const data = await this.authService.getEmail(req.client.id);
     return { data: { profile: { email: data } } };

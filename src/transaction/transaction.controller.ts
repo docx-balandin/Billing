@@ -5,70 +5,87 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { MakeDepositDto } from './dto/create-transaction.dto';
 import { TransactionEntity } from './entities/transaction.entity';
+import { Request as ExpressRequest } from 'express';
+import { JwtPayload } from '../auth/interfaces/jwt.interface';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/role.enum';
 
 @Controller('transaction')
+@UseGuards(RolesGuard)
 export class TransactionController {
   constructor(private readonly transactionsService: TransactionService) {}
 
-  @Get('all_transaction/:clientId')
-  async findAllTransaction(@Param('clientId', ParseIntPipe) clientId: number) {
-    const data = await this.transactionsService.findAllTransactions(clientId);
+  @Get('allTransaction')
+  @Roles(Role.CLIENT)
+  async findAllTransaction(
+    @Request() req: ExpressRequest & { client: JwtPayload },
+  ) {
+    const data = await this.transactionsService.findAllTransactions(
+      req.client.id,
+    );
     return { data };
   }
 
-  @Get('all_account_transaction/:clientId/:accountId')
+  @Get('allAccountTransaction/:accountId')
+  @Roles(Role.CLIENT)
   async findAccountAllTransaction(
-    @Param('clientId', ParseIntPipe) clientId: number,
+    @Request() req: ExpressRequest & { client: JwtPayload },
     @Param('accountId', ParseIntPipe) accountId: number,
   ) {
     const data = await this.transactionsService.findAccountAllTransactions(
-      clientId,
+      req.client.id,
       accountId,
     );
     return { data };
   }
 
-  @Post('deposit/:clientId/:accountId')
+  @Post('deposit/:accountId')
+  @Roles(Role.CLIENT)
   async makeDeposit(
-    @Param('clientId', ParseIntPipe) clientId: number,
+    @Request() req: ExpressRequest & { client: JwtPayload },
     @Param('accountId', ParseIntPipe) accountId: number,
     @Body() makeDepositDto: MakeDepositDto,
   ): Promise<{ data: TransactionEntity }> {
     const data = await this.transactionsService.makeDeposit(
-      clientId,
+      req.client.id,
       accountId,
       makeDepositDto,
     );
     return { data };
   }
 
-  @Post('withdraw/:clientId/:accountId')
+  @Post('withdraw/:accountId')
+  @Roles(Role.CLIENT)
   async makeWithdraw(
-    @Param('clientId', ParseIntPipe) clientId: number,
+    @Request() req: ExpressRequest & { client: JwtPayload },
     @Param('accountId', ParseIntPipe) accountId: number,
     @Body() makeDepositDto: MakeDepositDto,
   ): Promise<{ data: TransactionEntity }> {
     const data = await this.transactionsService.makeWithdraw(
-      clientId,
+      req.client.id,
       accountId,
       makeDepositDto,
     );
     return { data };
   }
 
-  @Post('transfer/:clientId/:fromAccountId/:toAccountId')
+  @Post('transfer/:fromAccountId/:toAccountId')
+  @Roles(Role.CLIENT)
   async makeTransfer(
-    @Param('clientId', ParseIntPipe) clientId: number,
+    @Request() req: ExpressRequest & { client: JwtPayload },
     @Param('fromAccountId', ParseIntPipe) fromAccountId: number,
     @Param('toAccountId', ParseIntPipe) toAccountId: number,
     @Body() makeDepositDto: MakeDepositDto,
   ): Promise<{ data: TransactionEntity }> {
     const data = await this.transactionsService.makeTransfer(
-      clientId,
+      req.client.id,
       fromAccountId,
       toAccountId,
       makeDepositDto,
@@ -76,16 +93,17 @@ export class TransactionController {
     return { data };
   }
 
-  @Post('p2transfer/:fromClientId/:toClientId/:fromAccountId/:toAccountId')
+  @Post('p2transfer/:toClientId/:fromAccountId/:toAccountId')
+  @Roles(Role.CLIENT)
   async makeP2Transfer(
-    @Param('fromClientId', ParseIntPipe) fromClientId: number,
+    @Request() req: ExpressRequest & { client: JwtPayload },
     @Param('toClientId', ParseIntPipe) toClientId: number,
     @Param('fromAccountId', ParseIntPipe) fromAccountId: number,
     @Param('toAccountId', ParseIntPipe) toAccountId: number,
     @Body() makeDepositDto: MakeDepositDto,
   ): Promise<{ data: TransactionEntity }> {
     const data = await this.transactionsService.makeP2Transfer(
-      fromClientId,
+      req.client.id,
       toClientId,
       fromAccountId,
       toAccountId,

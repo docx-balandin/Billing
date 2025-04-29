@@ -15,6 +15,16 @@ export class AccountService {
     private accountRepository: Repository<AccountEntity>,
   ) {}
 
+  async existsAccount(clientId: number, accountId: number) {
+    const account = await this.accountRepository.existsBy({
+      client: { id: clientId },
+      id: accountId,
+    });
+    if (!account) {
+      throw new NotFoundException(`Account ${accountId} not found`);
+    }
+  }
+
   async isSameClientAccounts(
     clientId: number,
     fromAccountId: number,
@@ -46,13 +56,7 @@ export class AccountService {
     clientId: number,
     id: number,
   ): Promise<Pick<AccountEntity, 'balance'>> {
-    const account = await this.accountRepository.existsBy({
-      id,
-      client: { id: clientId },
-    });
-    if (!account) {
-      throw new NotFoundException('Not Found');
-    }
+    await this.existsAccount(clientId, id);
 
     const res = await this.accountRepository.findOne({
       where: { id },
@@ -71,14 +75,6 @@ export class AccountService {
     accountId: number,
     amount: string,
   ): Promise<void> {
-    const account = await this.accountRepository.existsBy({
-      id: accountId,
-      client: { id: clientId },
-    });
-    if (!account) {
-      throw new NotFoundException('Not Found');
-    }
-
     const { balance } = await this.findBalance(clientId, accountId);
 
     await this.accountRepository.update(
