@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { AccountEntity } from '../../account/entities/account.entity';
 import { TransactionEntity } from '../../transaction/entities/transaction.entity';
+import { Role } from '../../auth/role.enum';
 
 @Entity('client')
 export class ClientEntity {
@@ -27,10 +28,11 @@ export class ClientEntity {
 
   @OneToMany(() => TransactionEntity, (transaction) => transaction.client)
   transaction?: TransactionEntity[];
-}
 
-// добавить поле емайл и пароль, сделать метод для регистрации
-// сделать метод по авторизации, этот метод должен возвращать один json web token 'jwt'
-// сделать метод для возврата емайл при запросе
-// почитать про практики хранение паролей в базе даных
-// паспорт.js не используем
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.CLIENT,
+  })
+  roles: Role;
+}

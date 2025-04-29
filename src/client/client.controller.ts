@@ -9,7 +9,7 @@ export class ClientController {
   constructor(private readonly clientService: ClientService) {}
 
   @Public()
-  @Post('create_user')
+  @Post('createUser')
   async createClient(
     @Body() createClientDto: CreateClientDto,
   ): Promise<{ data: ClientEntity }> {
