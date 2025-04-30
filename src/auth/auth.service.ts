@@ -7,16 +7,23 @@ import * as argon2 from 'argon2';
 export class AuthService {
   constructor(
     private readonly clientService: ClientService,
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
   ) {}
 
-  async signIn(email: string, pass: string): Promise<{ accessToken: string }> {
+  async validateClient(email: string, pass: string) {
     const client = await this.clientService.findOne(email);
     const passwordMatch = await argon2.verify(client.password, pass);
-    if (!passwordMatch) {
-      throw new UnauthorizedException();
+    if (client && passwordMatch) {
+      return client;
     }
+    throw new UnauthorizedException();
+  }
+
+  async login(email: string, pass: string): Promise<{ accessToken: string }> {
+    const client = await this.validateClient(email, pass);
+
     const payload = { id: client.id, email: client.email, roles: client.roles };
+
     const accessToken = await this.jwtService.signAsync(payload);
     return {
       accessToken,
