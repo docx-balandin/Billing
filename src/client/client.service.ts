@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,12 +9,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateClientDto } from './dto/create-client.dto';
 import * as argon2 from 'argon2';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class ClientService {
   constructor(
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
     @InjectRepository(ClientEntity)
-    private clientRepository: Repository<ClientEntity>,
+    private readonly clientRepository: Repository<ClientEntity>,
   ) {}
 
   async createClient(createClientDto: CreateClientDto): Promise<ClientEntity> {
@@ -27,10 +32,14 @@ export class ClientService {
 
     const passwordHash = await argon2.hash(createClientDto.password);
 
-    return this.clientRepository.save({
+    const createdClient = await this.clientRepository.save({
       email: createClientDto.email,
       password: passwordHash,
     });
+
+    await this.cacheManager.set(String(createdClient.id), createdClient.email);
+
+    return createdClient;
   }
 
   async findOne(email: string): Promise<ClientEntity> {

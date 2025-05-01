@@ -6,10 +6,23 @@ import { AdminModule } from './admin/admin.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-store';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get<string>('REDIS_HOST'),
+        port: parseInt(configService.get<string>('REDIS_PORT')!),
+        password: configService.get<string>('REDIS_PASSWORD'),
+      }),
+      inject: [ConfigService],
+    }),
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
         return {

@@ -1,11 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ClientService } from '../client/client.service';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
     private readonly clientService: ClientService,
     private readonly jwtService: JwtService,
   ) {}
@@ -24,6 +28,8 @@ export class AuthService {
 
     const payload = { id: client.id, email: client.email, roles: client.roles };
 
+    await this.cacheManager.set(String(client.id), client.email);
+
     const accessToken = await this.jwtService.signAsync(payload);
     return {
       accessToken,
@@ -31,6 +37,8 @@ export class AuthService {
   }
 
   async getEmail(id: number) {
-    return await this.clientService.findEmail(id);
+    const cacheEmail = await this.cacheManager.get<string>(String(id));
+
+    return cacheEmail || this.clientService.findEmail(id);
   }
 }
