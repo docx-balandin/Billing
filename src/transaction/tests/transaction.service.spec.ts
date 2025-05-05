@@ -1,10 +1,14 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TransactionService } from '../transaction.service';
-import { TransactionEntity } from '../entities/transaction.entity';
+import {
+  TransactionEntity,
+  TransactionStatusEnum,
+  TransactionTypeEnum,
+} from '../entities/transaction.entity';
 import { AccountService } from '../../account/account.service';
-import { BadRequestException } from '@nestjs/common';
 import { AccountEntity } from '../../account/entities/account.entity';
+import { ClientEntity } from '../../client/entities/client.entity';
 
 describe('TransactionService', () => {
   let mockFindBy: jest.Mock;
@@ -88,26 +92,26 @@ describe('TransactionService', () => {
   });
 
   describe('accountAllTransactions', () => {
-    const fakeTransaction = [
+    const fakeTransaction: TransactionEntity[] = [
       {
         id: 1,
         amount: '100',
         createdAt: new Date('2025-04-30 08:40:43.688'),
-        type: 'DEPOSIT',
-        fromAccount: 1,
-        toAccount: 2,
-        status: 'success',
-        client: 1,
+        type: TransactionTypeEnum.DEPOSIT,
+        fromAccount: { id: 1 } as AccountEntity,
+        toAccount: { id: 2 } as AccountEntity,
+        status: TransactionStatusEnum.SUCCESS,
+        client: { id: 1 } as ClientEntity,
       },
       {
         id: 2,
         amount: '100',
         createdAt: new Date('2025-04-30 08:40:43.688'),
-        type: 'DEPOSIT',
-        fromAccount: 2,
-        toAccount: 1,
-        status: 'success',
-        client: 1,
+        type: TransactionTypeEnum.DEPOSIT,
+        fromAccount: { id: 2 } as AccountEntity,
+        toAccount: { id: 1 } as AccountEntity,
+        status: TransactionStatusEnum.SUCCESS,
+        client: { id: 1 } as ClientEntity,
       },
     ];
 
@@ -132,17 +136,12 @@ describe('TransactionService', () => {
       });
     });
 
-    it('should return error if account not found', async () => {
-      jest
-        .spyOn(service, 'findAccountAllTransactions')
-        .mockRejectedValueOnce(new BadRequestException('Account Not Found'));
+    it('should return error if account not found', () => {
+      mockFind.mockResolvedValue([]);
 
-      try {
+      expect(async () => {
         await service.findAccountAllTransactions(3, 3);
-      } catch (error) {
-        expect(error).toBeInstanceOf(BadRequestException);
-        expect(error.message).toBe('Account Not Found');
-      }
+      }).rejects.toThrow('Account Not Found');
     });
   });
 
@@ -232,7 +231,7 @@ describe('TransactionService', () => {
       createdAt: new Date('2025-04-30 08:40:43.688'),
       balance: '100',
       isActive: true,
-      clientId: 1,
+      client: { id: 1 },
     } as AccountEntity;
 
     beforeEach(() => {
@@ -285,7 +284,7 @@ describe('TransactionService', () => {
     it('should call update balance with correct args', async () => {
       await accountService.updateBalance(1, 1, '100');
       expect(mockUpdateBalance).toHaveBeenCalledWith(
-        fakeAccount.client,
+        fakeAccount.client!.id,
         fakeAccount.id,
         fakeAccount.balance,
       );
