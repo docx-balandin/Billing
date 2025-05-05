@@ -85,7 +85,7 @@ export class AccountService {
     );
   }
 
-  async activeAccount(accountId: number): Promise<void> {
+  async activeAccount(accountId: number) {
     const active = await this.accountRepository.existsBy({
       id: accountId,
       isActive: true,
